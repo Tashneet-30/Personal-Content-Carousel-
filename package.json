@@ -1,0 +1,18 @@
+{
+  "name": "ai-news-hub",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^8.1.1"
+  },
+  "dependencies": {
+    "html2canvas": "^1.4.1",
+    "jszip": "^3.10.1"
+  }
+}
