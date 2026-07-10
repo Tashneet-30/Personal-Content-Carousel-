@@ -126,10 +126,3 @@ Make sure you have **Node.js** (v18 or higher) installed on your computer.
 
 ---
 
-## 🚀 How to Host Online (Free & Instant)
-This application is completely static (no backend database needed). You can host it for free in under a minute using **Vercel**:
-
-1.  Create a free account on [Vercel](https://vercel.com).
-2.  Import your GitHub repository: `Tashneet-30/Personal-Content-Carousel-`.
-3.  Vercel will auto-detect the Vite framework. Keep the default settings and click **Deploy**.
-4.  Your site is now live on a public URL! Every time you push code changes to GitHub, Vercel will automatically rebuild and update your site.
