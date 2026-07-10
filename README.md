@@ -31,28 +31,82 @@ We built this app using a **clean, lightweight, and modern frontend stack** so i
 
 ---
 
-## 🔄 User Flows & Features (How It Works)
+## 🔄 User Flows & Architecture Diagrams
 
-### Flow 1: Generating from "Today's Topic"
-```
-[User Types Topic] ➔ [Click "Generate"] ➔ [App Creates Synthetic Article] ➔ [Slide Builder splits text] ➔ [Opens Editor Modal]
-```
-1. In the Dashboard Hero, type a topic (e.g. *"How AI Agents search databases"*).
-2. Click **Generate Carousel**.
-3. The app creates a synthetic article, runs it through the sentence-splitter, structures it into slides, and launches the editor.
+### 1. Core Application Architecture Flow
+This diagram shows how the pages, components, and data services interact:
 
-### Flow 2: Generating from Live News
-```
-[Fetches RSS Feeds] ➔ [Normalizes Schema] ➔ [Renders Cards] ➔ [Click "Create Carousel"] ➔ [Editor Launches]
-```
-1. The app fetches live XML feeds from TechCrunch, The Verge, MIT Tech Review, etc.
-2. It parses the feeds to JSON, auto-categorizes them using keyword filters, and displays them on the dashboard.
-3. Click **📸 Create Carousel** on any article card. The editor opens pre-loaded with that article's title, excerpt, and full body.
+```mermaid
+graph TD
+    A[index.html Shell] --> B[main.js App Router]
+    
+    B -->|hash: #dashboard| C[dashboard.js Page]
+    B -->|hash: #carousel| D[carousel.js Page]
+    B -->|hash: #explore| E[explore.js Page]
+    B -->|hash: #profile| F[profile.js Page]
 
-### Flow 3: Writing Custom Content
-1. Navigate to the **Create Carousel** page (`#carousel`).
-2. Fill out the **Custom Content Form** (Title, Category, and paragraphs of text).
-3. Click **Generate Carousel** to run the custom text through the slide engine.
+    C -->|loads| G[newsCard.js]
+    C -->|loads| H[categoryFilter.js]
+    C -->|loads| I[searchBar.js]
+    
+    C -->|calls| J[newsService.js]
+    C -->|calls| K[hnService.js]
+    
+    J & K --> L[cacheService.js]
+    L -->|reads/writes| M[(localStorage)]
+    
+    C & D -->|opens modal| N[carouselEditor.js]
+    
+    N -->|calls| O[slideTemplates.js]
+    N -->|renders| P[carouselPreview.js]
+    N -->|triggers| Q[exportEngine.js]
+    
+    Q -->|renders PNGs| R[html2canvas]
+    Q -->|creates archive| S[JSZip]
+```
+
+### 2. "Today's Topic" Generator Flow
+Type any custom topic on the dashboard, and the generator builds an 8-slide deck:
+
+```mermaid
+flowchart TD
+    A[User enters topic in input field] --> B[Click 'Generate Carousel' or press Enter]
+    B --> C[Construct synthetic article JSON object]
+    C --> D[Run generateSlidesFromArticle helper]
+    D --> E[Split text into individual sentences]
+    E --> G[Construct array of 8 Slide Objects]
+    G --> H[Pass Slide Array to initCarouselEditor]
+    H --> I[Render modal interface & preview slide]
+```
+
+### 3. RSS News Feed Aggregation Flow
+How the app fetches, categorizes, and caches live AI news:
+
+```mermaid
+flowchart TD
+    A[Load Dashboard] --> B{Is cache valid in localStorage?}
+    B -->|Yes| C[Read cached articles]
+    B -->|No| D[Fetch XML Feeds in parallel]
+    D --> E[Route feeds through rss2json.com API]
+    E --> F[Convert XML to JSON & filter keywords]
+    F --> G[Deduplicate by title & cache in local storage]
+    C & G --> H[Sort articles & render cards in Grid]
+```
+
+### 4. Slide Generation & ZIP Export Flow
+The pipeline that converts HTML elements to downloadable PNG images:
+
+```mermaid
+flowchart TD
+    A[Click 'Export All Slides'] --> B[Loop through slide array]
+    B --> C[Render 1080x1350px slide off-screen]
+    C --> D[html2canvas screenshots DOM element]
+    D --> E[Convert to PNG blob & add to zip queue]
+    E --> F{More slides remaining?}
+    F -->|Yes| B
+    F -->|No| G[Generate ZIP archive using JSZip]
+    G --> H[Programmatically trigger ZIP file download]
+```
 
 ---
 
