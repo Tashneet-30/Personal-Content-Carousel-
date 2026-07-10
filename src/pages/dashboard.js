@@ -282,12 +282,45 @@ export async function initDashboard() {
       return;
     }
 
+    const t = topic.toLowerCase();
+    let title = topic;
+    let category = 'agents';
+    let excerpt = `A quick guide breaking down the essentials of ${topic} and why it matters today.`;
+    let content = `In this guide, we explore the core concepts of ${topic}. Understanding this topic is essential for staying ahead of the curve in today's fast-paced environment. We look at the fundamental principles, key real-world applications, and practical tips you can use from scratch. The future of this domain is evolving quickly, and staying informed is your superpower.`;
+
+    if (t.includes('graphrag') || t.includes('knowledge graph') || (t.includes('rag') && t.includes('graph'))) {
+      title = 'Understanding GraphRAG';
+      category = 'research';
+      excerpt = 'How combining mind maps with AI makes search engines way smarter.';
+      content = 'Standard RAG is like looking up a single keyword in the index and copying the answer. GraphRAG is like having a giant mind map connecting every person, event, and idea. It uses a Knowledge Graph to map relationships between concepts. This allows the AI to answer complex, book-wide questions that span multiple chapters. For example, it can summarize main themes or show how events in chapter 1 affected the ending. It prevents hallucinations by keeping the AI grounded in real connections.';
+    } else if (t.includes('agent') || t.includes('autonomous')) {
+      title = 'Autonomous AI Agents';
+      category = 'agents';
+      excerpt = 'The next frontier of AI: systems that plan, use tools, and solve tasks autonomously.';
+      content = 'AI Agents are autonomous systems powered by LLMs. They can observe their environment, make plans, and execute them using external tools like databases, web browsers, or APIs. Unlike standard chatbots, agents have memory and can run in loops to debug their own errors. Multi-agent frameworks like CrewAI allow different specialist agents to work together. This enables complex workflows like automated research, coding, or data analysis without human intervention.';
+    } else if (t.includes('llm') || t.includes('large language') || t.includes('claude') || t.includes('gpt')) {
+      title = 'How Large Language Models Work';
+      category = 'llms';
+      excerpt = 'A simplified guide to how models like Claude and GPT process language and generate responses.';
+      content = 'LLMs are trained on massive datasets of text to predict the next word in a sequence. They use tokenization to break down sentences into numbers called tokens. These tokens are converted into high-dimensional vectors representing meaning. The transformer architecture uses self-attention to weigh the importance of different words in a sentence. After pre-training, models are fine-tuned using RLHF (Reinforcement Learning from Human Feedback) to align them with human values and make them helpful assistants.';
+    } else if (t.includes('transformer') || t.includes('attention')) {
+      title = 'The Transformer Architecture';
+      category = 'research';
+      excerpt = 'The revolutionary deep learning model that powers modern Generative AI.';
+      content = 'Transformers were introduced by Google researchers in 2017 with the paper "Attention Is All You Need". The key innovation is self-attention, which allows the model to process words in parallel rather than one-by-one. This made training on massive web-scale datasets highly efficient. Positional encoding helps the model understand word order without sequential processing. Today, transformers power nearly all state-of-the-art LLMs, vision models, and translation systems.';
+    } else if (t.includes('ev') || t.includes('charging') || t.includes('murb') || t.includes('electric vehicle')) {
+      title = 'EV Infrastructure Planning in MURBs';
+      category = 'industry';
+      excerpt = 'Addressing the challenges of installing electric vehicle chargers in multi-family buildings.';
+      content = 'Multi-Unit Residential Buildings (MURBs) present unique challenges for EV charger installation, including electrical capacity limits and high grid load. Digital twin technology can help plan infrastructure by simulating demand patterns and passenger behavior. Multi-horizon forecasting algorithms predict electricity needs based on transit data and occupant schedules. Smart charging systems balance power delivery in real-time, preventing grid overloads. Sustainable mobility requires smart planning to make chargers accessible to all residents.';
+    }
+
     const syntheticArticle = {
       id: `topic-${Date.now()}`,
-      title: topic,
-      category: 'agents',
-      excerpt: `An overview and key points regarding the topic of: ${topic}.`,
-      content: `In this guide, we dive deep into the topic: ${topic}. We will look at why this is trending today, how it works, and how it is applied across different industries. We also explore what the future holds for this domain.`,
+      title,
+      category,
+      excerpt,
+      content,
       source: 'AI Hub',
       date: new Date().toISOString().split('T')[0],
       url: ''
