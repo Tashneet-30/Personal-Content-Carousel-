@@ -154,7 +154,7 @@ export function initExplore() {
       (cat, i) => `
       <div class="card category-card animate-on-scroll animate-stagger-${(i % 6) + 1}"
            data-category="${cat.id}">
-        <span class="cat-icon">${cat.emoji}</span>
+        <span class="cat-icon">${cat.icon}</span>
         <h3>${cat.label}</h3>
         <p>${CATEGORY_DESCRIPTIONS[cat.id] || 'Explore this topic.'}</p>
       </div>`

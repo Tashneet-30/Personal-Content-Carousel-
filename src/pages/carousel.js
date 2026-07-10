@@ -44,7 +44,7 @@ function openCarouselModal(article) {
  */
 function categoryOptions() {
   return CATEGORIES.filter((c) => c.id !== 'all')
-    .map((c) => `<option value="${c.id}">${c.emoji} ${c.label}</option>`)
+    .map((c) => `<option value="${c.id}">${c.icon} ${c.label}</option>`)
     .join('');
 }
 
