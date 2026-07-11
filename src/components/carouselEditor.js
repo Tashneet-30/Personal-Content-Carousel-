@@ -3,7 +3,8 @@
 // Full-featured slide editor with:
 //   - Sidebar thumbnails for slide navigation
 //   - Center preview frame with prev/next controls
-//   - Right panel: template picker, text editing, colors
+//   - Right panel: advanced presets, font pairing, alignments,
+//     background gradients, textures, progress bars, and hex accent pickers
 //   - Bottom bar: export & save actions
 // ============================================
 
@@ -22,28 +23,36 @@ let currentSlides = [];
 let currentSlideIndex = 0;
 let currentTemplate = 'nebula';
 
-// ---- Accent color options ----
+// ---- Advanced editor custom settings ----
+let editorSettings = {
+  fontPair: 'modern',
+  bgType: 'gradient',
+  bgValue: 'linear-gradient(160deg, #0f0a2e 0%, #1a0a3e 30%, #0d1b3e 60%, #0a0a1a 100%)',
+  pattern: 'glow',
+  alignment: 'left',
+  progressStyle: 'bar',
+  accentColor: '#a78bfa',
+  showBranding: true
+};
+
+// ---- Accent color presets ----
 const ACCENT_COLORS = [
-  '#8b5cf6', // violet (default)
-  '#3b82f6', // blue
-  '#06b6d4', // cyan
-  '#10b981', // emerald
-  '#f59e0b', // amber
-  '#f43f5e', // rose
-  '#6366f1', // indigo
+  '#cc5a01', // terracotta (default)
+  '#385d8a', // blue
+  '#1d7e8a', // cyan
+  '#1e704e', // emerald
+  '#b45309', // amber
+  '#be123c', // rose
+  '#a78bfa', // neon violet
   '#d4af37', // gold
 ];
 
 /**
  * Renders a single sidebar thumbnail for a slide.
- * @param {Object} slide - Slide data
- * @param {number} index - Slide index (zero-based)
- * @returns {string} HTML for the thumbnail
  */
 function renderThumb(slide, index) {
   const isActive = index === currentSlideIndex ? ' active' : '';
   const label = slide.type === 'cta' ? 'CTA' : (slide.title || `Slide ${index + 1}`);
-  // Truncate label for thumb display
   const shortLabel = label.length > 18 ? label.slice(0, 16) + '…' : label;
 
   return `
@@ -58,10 +67,6 @@ function renderThumb(slide, index) {
 
 /**
  * Renders the full carousel editor HTML layout.
- *
- * @param {Object} article - The source article object
- * @param {string} templateId - Initial template id (default 'nebula')
- * @returns {string} Complete editor HTML
  */
 export function renderCarouselEditor(article, templateId = 'nebula') {
   currentTemplate = templateId;
@@ -81,12 +86,58 @@ export function renderCarouselEditor(article, templateId = 'nebula') {
   const templatePickerHtml = renderTemplatePickerGrid();
 
   // Color swatches
-  const colorsHtml = ACCENT_COLORS.map((c, i) => `
+  const colorsHtml = ACCENT_COLORS.map((c) => `
     <span
-      class="color-swatch${i === 0 ? ' active' : ''}"
+      class="color-swatch${editorSettings.accentColor === c ? ' active' : ''}"
       data-color="${c}"
       style="background:${c};"
     ></span>
+  `).join('');
+
+  // Font Pair options
+  const fontPairOptions = [
+    { value: 'editorial', label: 'Editorial (Lora + Inter)' },
+    { value: 'modern', label: 'Modern (Outfit + Inter)' },
+    { value: 'sans', label: 'Minimal Sans (Inter)' },
+    { value: 'serif', label: 'Classic Serif (Lora)' },
+  ].map(opt => `<option value="${opt.value}" ${editorSettings.fontPair === opt.value ? 'selected' : ''}>${opt.label}</option>`).join('');
+
+  // Alignment options
+  const alignOptions = [
+    { value: 'left', label: 'Left Aligned' },
+    { value: 'center', label: 'Centered' },
+    { value: 'right', label: 'Right Aligned' },
+  ].map(opt => `<option value="${opt.value}" ${editorSettings.alignment === opt.value ? 'selected' : ''}>${opt.label}</option>`).join('');
+
+  // Pattern options
+  const patternOptions = [
+    { value: 'none', label: 'None' },
+    { value: 'grid', label: 'Grid Overlay' },
+    { value: 'dots', label: 'Dots Pattern' },
+    { value: 'glow', label: 'Atmospheric Glow' },
+  ].map(opt => `<option value="${opt.value}" ${editorSettings.pattern === opt.value ? 'selected' : ''}>${opt.label}</option>`).join('');
+
+  // Progress Bar options
+  const progressOptions = [
+    { value: 'none', label: 'None' },
+    { value: 'bar', label: 'Top Progress Bar' },
+    { value: 'dots', label: 'Bottom Progress Dots' },
+    { value: 'number', label: 'Page Numbers' },
+  ].map(opt => `<option value="${opt.value}" ${editorSettings.progressStyle === opt.value ? 'selected' : ''}>${opt.label}</option>`).join('');
+
+  // Background presets
+  const bgPresets = [
+    { label: 'Beige (Claude)', value: '#fbfaf7' },
+    { label: 'Dark Space', value: '#050510' },
+    { label: 'White minimal', value: '#fafafa' },
+    { label: 'Royal Gradient', value: 'linear-gradient(160deg, #0f0a2e 0%, #1a0a3e 30%, #0d1b3e 60%, #0a0a1a 100%)' },
+    { label: 'Sunset Glow', value: 'linear-gradient(135deg, #cc5a01 0%, #b45309 100%)' },
+    { label: 'Ocean Breeze', value: 'linear-gradient(135deg, #385d8a 0%, #1d7e8a 100%)' },
+  ];
+  
+  const isPreset = bgPresets.some(preset => preset.value === editorSettings.bgValue);
+  const bgPresetsHtml = bgPresets.map(p => `
+    <option value="${p.value}" ${editorSettings.bgValue === p.value ? 'selected' : ''}>${p.label}</option>
   `).join('');
 
   return `
@@ -116,27 +167,74 @@ export function renderCarouselEditor(article, templateId = 'nebula') {
       </div>
 
       <!-- === Right panel: controls === -->
-      <div class="editor-controls">
-        <!-- Template picker -->
+      <div class="editor-controls" style="max-height: calc(100vh - 220px); overflow-y: auto; padding-right: 8px;">
+        <!-- Preset Templates -->
         <div class="control-group">
-          <label>Template</label>
+          <label>Visual Presets</label>
           <div id="template-picker">${templatePickerHtml}</div>
         </div>
 
-        <!-- Slide text editors -->
+        <!-- Typography Settings -->
         <div class="control-group">
-          <label>Slide Title</label>
-          <textarea id="edit-title" rows="2">${escapeHtml(activeSlide.title || '')}</textarea>
-        </div>
-        <div class="control-group">
-          <label>Slide Body</label>
-          <textarea id="edit-body" rows="5">${escapeHtml(activeSlide.body || (activeSlide.bullets || []).join('\n'))}</textarea>
+          <label for="set-font">Typography Style</label>
+          <select id="set-font" class="form-select" style="width:100%;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);">${fontPairOptions}</select>
         </div>
 
-        <!-- Color accent -->
+        <!-- Alignment -->
         <div class="control-group">
-          <label>Accent Color</label>
-          <div class="color-options" id="color-picker">${colorsHtml}</div>
+          <label for="set-align">Text Alignment</label>
+          <select id="set-align" class="form-select" style="width:100%;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);">${alignOptions}</select>
+        </div>
+
+        <!-- Background Settings -->
+        <div class="control-group">
+          <label for="set-bg-preset">Background Color / Preset</label>
+          <select id="set-bg-preset" class="form-select" style="width:100%;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);">
+            ${bgPresetsHtml}
+            <option value="custom" ${!isPreset ? 'selected' : ''}>Custom CSS Gradient/Solid</option>
+          </select>
+        </div>
+
+        <div class="control-group" id="custom-bg-wrapper" style="display: ${!isPreset ? 'block' : 'none'};">
+          <label for="set-bg-custom">Custom CSS Background</label>
+          <input type="text" id="set-bg-custom" class="form-input" value="${escapeHtml(editorSettings.bgValue)}" placeholder="e.g. #ffffff or linear-gradient(135deg, ...)" style="width:100%;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);" />
+        </div>
+
+        <!-- Pattern Overlays -->
+        <div class="control-group">
+          <label for="set-pattern">Texture & Pattern Overlay</label>
+          <select id="set-pattern" class="form-select" style="width:100%;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);">${patternOptions}</select>
+        </div>
+
+        <!-- Progress Style -->
+        <div class="control-group">
+          <label for="set-progress">Progress Style</label>
+          <select id="set-progress" class="form-select" style="width:100%;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);">${progressOptions}</select>
+        </div>
+
+        <!-- Slide Text Editing -->
+        <div class="control-group">
+          <label for="edit-title">Active Slide Title</label>
+          <textarea id="edit-title" rows="2" style="width:100%;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);">${escapeHtml(activeSlide.title || '')}</textarea>
+        </div>
+        <div class="control-group">
+          <label for="edit-body">Active Slide Body (or Bullet Points)</label>
+          <textarea id="edit-body" rows="5" style="width:100%;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);" placeholder="Type one bullet point per line if this is a bullet slide.">${escapeHtml(activeSlide.body || (activeSlide.bullets || []).join('\n'))}</textarea>
+        </div>
+
+        <!-- Branding Header/Footer -->
+        <div class="control-group" style="display: flex; align-items: center; gap: var(--space-xs); margin-top: var(--space-md); margin-bottom: var(--space-md);">
+          <input type="checkbox" id="set-branding" ${editorSettings.showBranding ? 'checked' : ''} style="width:18px;height:18px;cursor:pointer;" />
+          <label for="set-branding" style="margin:0;cursor:pointer;font-weight:500;">Show Branding (Header & Footer)</label>
+        </div>
+
+        <!-- Accent Color and Swatch Picker -->
+        <div class="control-group">
+          <label>Brand Accent Color</label>
+          <div style="display: flex; gap: var(--space-sm); align-items: center;">
+            <div class="color-options" id="color-picker" style="flex:1;display:flex;flex-wrap:wrap;gap:6px;">${colorsHtml}</div>
+            <input type="color" id="custom-accent-picker" value="${editorSettings.accentColor}" style="width:40px;height:40px;border-radius:var(--radius-sm);border:1px solid var(--border-color);padding:2px;cursor:pointer;" />
+          </div>
         </div>
       </div>
     </div>
@@ -158,7 +256,7 @@ function updatePreview() {
   const frame = document.getElementById('preview-frame');
   const slide = currentSlides[currentSlideIndex];
   if (frame && slide) {
-    renderSlidePreview(slide, currentTemplate, frame);
+    renderSlidePreview(slide, currentTemplate, frame, editorSettings);
   }
 }
 
@@ -194,7 +292,6 @@ function updateEditorFields() {
 
   if (titleEl) titleEl.value = slide.title || '';
   if (bodyEl) {
-    // For bullet slides, show bullets as newline-separated text
     if (slide.type === 'bullets' && Array.isArray(slide.bullets)) {
       bodyEl.value = slide.bullets.join('\n');
     } else {
@@ -214,6 +311,52 @@ function refreshAll() {
 }
 
 /**
+ * Syncs the right sidebar selector values to match the current editorSettings object.
+ */
+function refreshAllControls() {
+  updateTemplatePicker();
+  
+  const fontEl = document.getElementById('set-font');
+  const alignEl = document.getElementById('set-align');
+  const bgPresetEl = document.getElementById('set-bg-preset');
+  const bgCustomEl = document.getElementById('set-bg-custom');
+  const customBgWrapper = document.getElementById('custom-bg-wrapper');
+  const patternEl = document.getElementById('set-pattern');
+  const progressEl = document.getElementById('set-progress');
+  const brandingEl = document.getElementById('set-branding');
+  const customColorEl = document.getElementById('custom-accent-picker');
+
+  if (fontEl) fontEl.value = editorSettings.fontPair;
+  if (alignEl) alignEl.value = editorSettings.alignment;
+  if (patternEl) patternEl.value = editorSettings.pattern;
+  if (progressEl) progressEl.value = editorSettings.progressStyle;
+  if (brandingEl) brandingEl.checked = editorSettings.showBranding;
+  if (customColorEl) customColorEl.value = editorSettings.accentColor;
+
+  if (bgPresetEl) {
+    const hasPreset = Array.from(bgPresetEl.options).some(opt => opt.value === editorSettings.bgValue);
+    if (hasPreset) {
+      bgPresetEl.value = editorSettings.bgValue;
+      if (customBgWrapper) customBgWrapper.style.display = 'none';
+    } else {
+      bgPresetEl.value = 'custom';
+      if (customBgWrapper) customBgWrapper.style.display = 'block';
+    }
+  }
+  if (bgCustomEl) bgCustomEl.value = editorSettings.bgValue;
+
+  // Re-highlight active accent swatch if any matches
+  const colorPicker = document.getElementById('color-picker');
+  if (colorPicker) {
+    colorPicker.querySelectorAll('.color-swatch').forEach(swatch => {
+      swatch.classList.toggle('active', swatch.dataset.color === editorSettings.accentColor);
+    });
+  }
+
+  refreshAll();
+}
+
+/**
  * Updates the active template highlight in the picker grid.
  */
 function updateTemplatePicker() {
@@ -229,14 +372,18 @@ function updateTemplatePicker() {
 /**
  * Initializes the carousel editor for a given article.
  * Generates slides, renders the editor, and wires up all event listeners.
- *
- * @param {Object} article - Article data used to generate initial slides
  */
 export function initCarouselEditor(article) {
   // 1. Generate initial slides from the article content
   currentSlides = generateSlidesFromArticle(article);
   currentSlideIndex = 0;
+  
+  // Set default initial template settings
   currentTemplate = 'nebula';
+  const template = TEMPLATES.find(t => t.id === currentTemplate);
+  if (template) {
+    editorSettings = { ...editorSettings, ...template.settings };
+  }
 
   // 2. Render the editor HTML into the modal root
   const root = document.getElementById('carousel-editor-root');
@@ -249,16 +396,96 @@ export function initCarouselEditor(article) {
   // 3. Initial preview render
   updatePreview();
 
-  // ---- Event listeners (delegated where possible) ----
+  // ---- Event listeners ----
 
-  // -- Template switching --
+  // -- Preset Template switching --
   const templatePicker = document.getElementById('template-picker');
   if (templatePicker) {
     templatePicker.addEventListener('click', (e) => {
       const option = e.target.closest('.template-option');
       if (!option) return;
       currentTemplate = option.dataset.templateId;
-      updateTemplatePicker();
+      
+      const matched = TEMPLATES.find(t => t.id === currentTemplate);
+      if (matched) {
+        editorSettings = {
+          ...editorSettings,
+          ...matched.settings
+        };
+      }
+      refreshAllControls();
+    });
+  }
+
+  // -- Typography Pairing --
+  const selectFont = document.getElementById('set-font');
+  if (selectFont) {
+    selectFont.addEventListener('change', (e) => {
+      editorSettings.fontPair = e.target.value;
+      updatePreview();
+    });
+  }
+
+  // -- Text Alignment --
+  const selectAlign = document.getElementById('set-align');
+  if (selectAlign) {
+    selectAlign.addEventListener('change', (e) => {
+      editorSettings.alignment = e.target.value;
+      updatePreview();
+    });
+  }
+
+  // -- Background Preset / Custom Toggle --
+  const selectBgPreset = document.getElementById('set-bg-preset');
+  const customBgWrapper = document.getElementById('custom-bg-wrapper');
+  const inputBgCustom = document.getElementById('set-bg-custom');
+
+  if (selectBgPreset) {
+    selectBgPreset.addEventListener('change', (e) => {
+      const val = e.target.value;
+      if (val === 'custom') {
+        if (customBgWrapper) customBgWrapper.style.display = 'block';
+      } else {
+        if (customBgWrapper) customBgWrapper.style.display = 'none';
+        editorSettings.bgValue = val;
+        editorSettings.bgType = val.includes('gradient') ? 'gradient' : 'solid';
+        if (inputBgCustom) inputBgCustom.value = val;
+        updatePreview();
+      }
+    });
+  }
+
+  if (inputBgCustom) {
+    inputBgCustom.addEventListener('input', (e) => {
+      editorSettings.bgValue = e.target.value;
+      editorSettings.bgType = e.target.value.includes('gradient') ? 'gradient' : 'solid';
+      updatePreview();
+    });
+  }
+
+  // -- Texture Patterns --
+  const selectPattern = document.getElementById('set-pattern');
+  if (selectPattern) {
+    selectPattern.addEventListener('change', (e) => {
+      editorSettings.pattern = e.target.value;
+      updatePreview();
+    });
+  }
+
+  // -- Progress Bar Style --
+  const selectProgress = document.getElementById('set-progress');
+  if (selectProgress) {
+    selectProgress.addEventListener('change', (e) => {
+      editorSettings.progressStyle = e.target.value;
+      updatePreview();
+    });
+  }
+
+  // -- Branding Toggle --
+  const checkBranding = document.getElementById('set-branding');
+  if (checkBranding) {
+    checkBranding.addEventListener('change', (e) => {
+      editorSettings.showBranding = e.target.checked;
       updatePreview();
     });
   }
@@ -295,7 +522,7 @@ export function initCarouselEditor(article) {
     });
   }
 
-  // -- Slide dots navigation (delegated) --
+  // -- Slide dots navigation --
   const dotsContainer = document.getElementById('slide-dots-container');
   if (dotsContainer) {
     dotsContainer.addEventListener('click', (e) => {
@@ -327,7 +554,6 @@ export function initCarouselEditor(article) {
       if (!slide) return;
 
       if (slide.type === 'bullets') {
-        // Parse newline-separated text into bullet array
         slide.bullets = e.target.value.split('\n').filter(line => line.trim());
       } else {
         slide.body = e.target.value;
@@ -351,7 +577,6 @@ export function initCarouselEditor(article) {
       };
       currentSlides.push(newSlide);
 
-      // Update totalSlides on all existing slides
       currentSlides.forEach((s, i) => {
         s.slideNumber = i + 1;
         s.totalSlides = currentSlides.length;
@@ -373,13 +598,11 @@ export function initCarouselEditor(article) {
       }
       currentSlides.splice(currentSlideIndex, 1);
 
-      // Re-index slide numbers
       currentSlides.forEach((s, i) => {
         s.slideNumber = i + 1;
         s.totalSlides = currentSlides.length;
       });
 
-      // Adjust index if it's now out of range
       if (currentSlideIndex >= currentSlides.length) {
         currentSlideIndex = currentSlides.length - 1;
       }
@@ -389,24 +612,46 @@ export function initCarouselEditor(article) {
     });
   }
 
-  // -- Color accent picker --
+  // -- Color accent swatches --
   const colorPicker = document.getElementById('color-picker');
+  const customAccentPicker = document.getElementById('custom-accent-picker');
+
   if (colorPicker) {
     colorPicker.addEventListener('click', (e) => {
       const swatch = e.target.closest('.color-swatch');
       if (!swatch) return;
 
-      // Toggle active state
       colorPicker.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
       swatch.classList.add('active');
 
-      // NOTE: Accent color customization would require injecting dynamic
-      // CSS variables into the slide. For now we store it on the slide data.
+      const col = swatch.dataset.color;
+      editorSettings.accentColor = col;
+      if (customAccentPicker) customAccentPicker.value = col;
+      
+      // Update accent color for this specific slide (allows multi-color decks!)
       const slide = currentSlides[currentSlideIndex];
       if (slide) {
-        slide.accentColor = swatch.dataset.color;
+        slide.accentColor = col;
       }
-      showToast(`Accent color updated`, 'info');
+      updatePreview();
+    });
+  }
+
+  if (customAccentPicker) {
+    customAccentPicker.addEventListener('input', (e) => {
+      const col = e.target.value;
+      editorSettings.accentColor = col;
+      
+      // De-highlight swatches since we picked custom
+      if (colorPicker) {
+        colorPicker.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+      }
+      
+      const slide = currentSlides[currentSlideIndex];
+      if (slide) {
+        slide.accentColor = col;
+      }
+      updatePreview();
     });
   }
 
@@ -414,7 +659,7 @@ export function initCarouselEditor(article) {
   const btnExport = document.getElementById('btn-export-all');
   if (btnExport) {
     btnExport.addEventListener('click', async () => {
-      await exportAllSlides(currentSlides, currentTemplate);
+      await exportAllSlides(currentSlides, currentTemplate, editorSettings);
     });
   }
 
@@ -425,10 +670,11 @@ export function initCarouselEditor(article) {
       try {
         const draft = {
           template: currentTemplate,
+          settings: editorSettings,
           slides: currentSlides,
           savedAt: new Date().toISOString(),
         };
-        localStorage.setItem('carousel-draft', JSON.stringify(draft));
+        localStorage.setItem('carousel-craft-draft', JSON.stringify(draft));
         showToast('Draft saved locally!', 'success');
       } catch (err) {
         console.error('Save draft failed:', err);
